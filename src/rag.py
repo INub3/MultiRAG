@@ -45,7 +45,7 @@ siguiendo las reglas del sistema."""
 
 
 def generate_answer(query: str, evidences: list[dict], history_text: str = "",
-                     temperature: float = 0.2, max_retries: int = 5) -> str:
+                     temperature: float = 0.2, max_retries: int = 1) -> str:
     prompt = build_prompt(query, evidences, history_text)
     client = get_client()
 
@@ -70,7 +70,7 @@ def generate_answer(query: str, evidences: list[dict], history_text: str = "",
 
 
 def rag_pipeline(query: str, embedder, store, reranker=None, memory=None, feedback=None,
-                  session_id: str = "default", use_query_expansion: bool = True,
+                  session_id: str = "default", use_query_expansion: bool = False,
                   top_k_retrieve: int = config.TOP_K_RETRIEVE,
                   top_k_final: int = config.TOP_K_FINAL) -> dict:
     """

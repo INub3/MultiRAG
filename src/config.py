@@ -37,7 +37,7 @@ MAX_PRODUCTS_SAMPLE = 3000   # tope de productos unicos tras el muestreo por que
 # --- Modelos ---
 CLIP_MODEL_NAME = "openai/clip-vit-base-patch32"
 RERANKER_MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-flash-latest"
 
 # --- Recuperacion / RAG ---
 TOP_K_RETRIEVE = 20

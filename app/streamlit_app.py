@@ -66,7 +66,7 @@ st.caption(
 
 with st.sidebar:
     st.header("Opciones")
-    use_expansion = st.checkbox("Query Expansion", value=True)
+    use_expansion = st.checkbox("Query Expansion", value=False)
     use_memory = st.checkbox("Memoria conversacional", value=True)
     top_k_retrieve = st.slider("Top-k recuperacion (FAISS)", 5, 50, config.TOP_K_RETRIEVE)
     top_k_final = st.slider("Top-k final (tras re-ranking)", 1, 10, config.TOP_K_FINAL)
