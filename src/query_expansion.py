@@ -17,7 +17,7 @@ from google.genai import errors as genai_errors
 from google.genai import types
 
 from src import config
-from src.llm_client import get_client
+from src.llm_client import obtener_cliente
 
 EXPANSION_SYSTEM_INSTRUCTION = """Eres un asistente de busqueda de productos de e-commerce.
 Dada una consulta de un usuario, genera reformulaciones alternativas que ayuden a recuperar
@@ -28,17 +28,17 @@ Cada reformulacion debe ser, en si misma, una consulta de busqueda corta y valid
 explicacion, nota o fragmento de oracion). Genera como maximo 3 reformulaciones."""
 
 
-def _is_valid_variant(text: str, original: str) -> bool:
+def _es_variante_valida(text: str, original: str) -> bool:
     """Descarta vacios, restos sin contenido real y duplicados triviales de la consulta original."""
     if not text or not any(c.isalnum() for c in text):
         return False
     return text.strip().lower() != original.strip().lower()
 
 
-def expand_query(query: str, n_expansions: int = 3, max_retries: int = 2) -> list[str]:
+def expandir_consulta(query: str, n_expansions: int = 3, max_retries: int = 2) -> list[str]:
     """Devuelve [query_original, reformulacion_1, ...]. Nunca lanza si falla el LLM."""
     variants = [query]
-    client = get_client()
+    client = obtener_cliente()
 
     for attempt in range(max_retries):
         try:
@@ -63,7 +63,7 @@ def expand_query(query: str, n_expansions: int = 3, max_retries: int = 2) -> lis
                 # motivo de parseo fallido; no es un error de red, pero conviene reintentar
                 raise ValueError(f"respuesta sin JSON valido (finish_reason={response.candidates[0].finish_reason})")
             reformulations = response.parsed
-            variants.extend([r for r in reformulations if _is_valid_variant(r, query)][:n_expansions])
+            variants.extend([r for r in reformulations if _es_variante_valida(r, query)][:n_expansions])
             return variants
         except (genai_errors.ServerError, ValueError) as e:
             # 503 por alta demanda o JSON incompleto: ambos transitorios, vale un reintento corto
@@ -79,18 +79,18 @@ def expand_query(query: str, n_expansions: int = 3, max_retries: int = 2) -> lis
     return variants
 
 
-def multi_query_retrieve(query: str, embedder, store,
-                          top_k: int = config.TOP_K_RETRIEVE) -> tuple[list[dict], list[str]]:
+def recuperar_multi_consulta(query: str, embedder, store,
+                              top_k: int = config.TOP_K_RETRIEVE) -> tuple[list[dict], list[str]]:
     """Recupera con la query original + expansiones y fusiona por product_id (max score).
 
     Devuelve (resultados, variantes) para poder mostrar en la UI que reformulaciones se usaron.
     """
-    variants = expand_query(query)
+    variants = expandir_consulta(query)
 
     best_by_product: dict[str, dict] = {}
     for variant in variants:
-        variant_embedding = embedder.encode_query(variant)
-        for hit in store.search(variant_embedding, top_k=top_k):
+        variant_embedding = embedder.codificar_consulta(variant)
+        for hit in store.buscar(variant_embedding, top_k=top_k):
             pid = hit["product_id"]
             if pid not in best_by_product or hit["score"] > best_by_product[pid]["score"]:
                 best_by_product[pid] = hit
