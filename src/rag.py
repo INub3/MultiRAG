@@ -25,6 +25,10 @@ Reglas estrictas:
 3. Si integras informacion de varios productos, se explicito al respecto.
 4. No inventes precios, caracteristicas ni marcas que no esten en las evidencias.
 5. Responde en el mismo idioma de la consulta del usuario.
+6. Si hay evidencias relevantes, empieza tu respuesta con una linea breve (1 sola frase) que
+   resuma cuantos productos se encontraron y de que tipo son en general. Luego responde la
+   consulta puntual del usuario. No hagas un analisis extenso ni compares producto por
+   producto salvo que el usuario lo pida explicitamente.
 """
 
 
@@ -79,9 +83,10 @@ def rag_pipeline(query: str, embedder, store, reranker=None, memory=None, feedba
     pasan, el pipeline degrada al comportamiento base del PDF.
     """
     effective_query = memory.contextualize_query(query) if memory else query
+    query_variants: list[str] = []
 
     if use_query_expansion:
-        candidates = multi_query_retrieve(effective_query, embedder, store, top_k=top_k_retrieve)
+        candidates, query_variants = multi_query_retrieve(effective_query, embedder, store, top_k=top_k_retrieve)
     else:
         query_vector = embedder.encode_query(effective_query)
         if feedback is not None:
@@ -102,4 +107,5 @@ def rag_pipeline(query: str, embedder, store, reranker=None, memory=None, feedba
         "effective_query": effective_query,
         "answer": answer,
         "evidences": evidences,
+        "query_variants": [v for v in query_variants if v != effective_query],
     }

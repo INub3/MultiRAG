@@ -66,7 +66,7 @@ st.caption(
 
 with st.sidebar:
     st.header("Opciones")
-    use_expansion = st.checkbox("Query Expansion", value=False)
+    use_expansion = st.checkbox("Query Expansion", value=True)
     use_memory = st.checkbox("Memoria conversacional", value=True)
     top_k_retrieve = st.slider("Top-k recuperacion (FAISS)", 5, 50, config.TOP_K_RETRIEVE)
     top_k_final = st.slider("Top-k final (tras re-ranking)", 1, 10, config.TOP_K_FINAL)
@@ -81,6 +81,11 @@ for turn in st.session_state.chat_log:
         st.markdown(turn["content"])
         if turn["role"] == "assistant" and turn.get("result"):
             result = turn["result"]
+            if result["effective_query"] != result["query"]:
+                st.caption(f"Consulta reformulada (memoria): *{result['effective_query']}*")
+            if result.get("query_variants"):
+                variants_text = " · ".join(f"*{v}*" for v in result["query_variants"])
+                st.caption(f"🔎 Tambien se busco con: {variants_text}")
             with st.expander(f"Ver evidencias ({len(result['evidences'])})"):
                 for i, ev in enumerate(result["evidences"]):
                     cols = st.columns([1, 3])
@@ -130,8 +135,6 @@ if query:
                 top_k_final=top_k_final,
             )
         st.markdown(result["answer"])
-        if result["effective_query"] != query:
-            st.caption(f"Consulta reformulada (memoria): *{result['effective_query']}*")
 
     st.session_state.chat_log.append(
         {"role": "assistant", "content": result["answer"], "result": result}
